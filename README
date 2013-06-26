@@ -1,6 +1,6 @@
 About the Dylan Code
 
-This is an implementation, in Dylan, of the core game logic from the
+This is an implementation, in Haskell, of the core game logic from the
 old Macintosh Polar game. See:
 
 http://praisecurseandrecurse.blogspot.com/2013/06/dispatch-for-polar-game-in-dylan.html
@@ -44,10 +44,3 @@ I am not a lawyer, but I believe Mr. Endo has a valid copyright claim
 to his implementation, including his original graphics and text. I do
 not believe that copyright necessarily protects gameplay mechanics or
 level design, but remember that part where I said I am not a lawyer?
-
-Along with my code, I have uploaded several screen shots. These are
-not intended to violate Mr. Endo's copyright. They are there for
-reference.
-
-My ultimate intent is to release this as a free game in the App Store,
-with redrawn graphics, as an homage to Mr. Endo's original.
