@@ -1,0 +1,53 @@
+About the Dylan Code
+
+This is an implementation, in Dylan, of the core game logic from the
+old Macintosh Polar game. See:
+
+http://praisecurseandrecurse.blogspot.com/2013/06/dispatch-for-polar-game-in-dylan.html
+
+I wrote it for learning and experimental purposes, to test the current
+OpenDylan compiler and runtime and to consider some design alternatives.
+You are free to use it in any way that seems right to you, but please
+notice possible intellectual property issues described below.
+
+About the iOS Code
+
+This is a reverse-engineered implementation of the old Macintosh Polar
+game, something I saved since my college days. Right now it is just the
+"back end" code for iOS, but has no GUI. I am working on a GUI as time
+allows. For details see my blog:
+
+http://praisecurseandrecurse.blogspot.com/2013/06/objective-c-day-3.html
+
+I wrote "Many years ago there existed on old-school MacOS a small game
+called "Polar." It was a very simple game, written by a guy (Go Endo)
+who was probably a student at the time, but I was fond of it -- fond
+enough to save it for 23 years, with the intention of studying its
+design and re-implementing it in the future."
+
+I further noted that "the original game had a copyright notice (1990),
+and was shareware ($2.00). I can't remember if I ever sent the author
+$2.00."
+
+[He certainly deserved it, and more, for the amount of entertainment
+I got out of his challenging puzzles! From what I can tell, Polar was
+never popular and has largely been forgotten -- undeservedly so, in
+my opinion, because it is extremely clever.]
+
+I continued "I'm not sure how he would feel about me taking apart and
+trying to re-implement his game, or whether he'd try to assert that
+copyright prevented me from doing so, but I'll assume he's a nice guy
+and wouldn't care as long as I don't charge for it, and go ahead, on
+the theory that easier to ask forgiveness than permission."
+
+I am not a lawyer, but I believe Mr. Endo has a valid copyright claim
+to his implementation, including his original graphics and text. I do
+not believe that copyright necessarily protects gameplay mechanics or
+level design, but remember that part where I said I am not a lawyer?
+
+Along with my code, I have uploaded several screen shots. These are
+not intended to violate Mr. Endo's copyright. They are there for
+reference.
+
+My ultimate intent is to release this as a free game in the App Store,
+with redrawn graphics, as an homage to Mr. Endo's original.
