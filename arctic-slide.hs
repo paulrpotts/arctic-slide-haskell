@@ -1,16 +1,23 @@
+import Data.List
+
 data Dir = North | East | South | West
     deriving (Show, Eq)
 
-data Pos y x = Pos Int Int 
+data Pos = Pos { posY :: Int, posX :: Int } 
     deriving (Show, Eq)
-
--- N.B.: capitalization of initial letters in posY, posX is
--- semantically important!
-posY ( Pos y x ) = y 
-posX ( Pos y x ) = x
 
 data Tile = Empty | Tree | Mountain | House | Ice_Block |
     Bomb | Heart | Edge deriving (Show, Eq)
+
+-- All the tutorials say "don't use arrays, don't use arrays,
+-- don't use arrays," at least not until you've worked out what
+-- lists can do, and need to optimize the implementation. So,
+-- fine. Let's try lists -- a list of rows of tiles -- and some
+-- functions to extract "slices" in 4 different directions. 
+type Board = [[Tile]] 
+
+data World = World { board :: Board, penguinPos :: Pos, penguinDir :: Dir,
+                     heartCount :: Int } deriving (Show)
 
 -- Different types of tiles have different properties in
 -- different interaction contexts: 
@@ -32,22 +39,14 @@ movable t = ( t == Bomb ) || ( t == Heart ) || ( t == Ice_Block )
 fixed :: Tile -> Bool
 fixed t = ( t == House ) || ( t == Mountain ) || ( t == Edge )
 
--- All the tutorials say "don't use arrays, don't use arrays,
--- don't use arrays," at least not until you've worked out what
--- lists can do, and need to optimize the implementation. So,
--- fine. Let's try lists -- a list of rows of tiles -- and some
--- functions to extract "slices" in 4 different directions. 
-type Board = [[Tile]] 
-
 -- Interaction logic operates on a list of tiles extrated from
 -- the board, starting at a given pos and going in the given
 -- dir, until the edge of the board is reached.
--- TODO: how do I declare nice Haskell constants?
--- Also, these parens seem excessive... 
-slice :: Board -> Pos y x -> Dir -> [Tile]
-slice board pos East = drop ( posX pos ) 
-    $ head $ drop ( posY pos ) board 
-slice _ _ _ = error "slice: not handled yet!" 
+slice :: Board -> Pos -> Dir -> [Tile]
+slice board pos East = ( drop ( posX pos ) ( board !! ( posY pos ) ) ) ++ [Edge]
+slice board pos South = ( drop ( posY pos ) $ ( transpose board ) !! ( posX pos ) ) ++ [Edge]
+slice board pos West = ( reverse $ take ( posX pos + 1 ) $ board !! ( posY pos ) ) ++ [Edge]
+slice board pos North = ( reverse $ take ( posY pos + 1 ) $ ( transpose board ) !! ( posX pos ) ) ++ [Edge]
  
 slide :: [Tile] -> [Tile]
 slide [] = error "slide empty list!"
@@ -74,21 +73,38 @@ step [] = error "step: empty list!"
 step ts = if walkable (head ts) then ( True, ts )
                                 else ( False, collide ts ) 
 
--- Move gets the board, the penguin position, the penguin
--- direction, and the direction of movement. If the penguin
--- is moved in a new direction, it just turns to face the
--- new direction and nothing else changes. If the penguin
--- is moved in the direction it is facing, then we attempt
--- to step and pass a slice of the board 
--- the tiles in the direction the penguin is facing
-move :: Board -> Pos y x -> Dir -> Dir -> 
-    ( [Tile], Pos y x, Dir, Dir )
-move board pos move_dir penguin_dir =
-    if move_dir /= penguin_dir
-    then ( head board, pos, move_dir, move_dir )
-    else ( collide $ slice board (Pos 1 0) penguin_dir, 
-        pos, penguin_dir, penguin_dir ) 
+get_initial_board :: [[Tile]]
+get_initial_board = [[Tree,Empty,Empty,Empty,Empty,Empty,
+                      Empty,Empty,Empty,Empty,Empty,Empty,
+                      Empty,Empty,Empty,Tree,Empty,Empty,
+                      Empty,Empty,Empty,Ice_Block,Empty,Empty],
+                     [Tree,Empty,Bomb,Empty,Mountain,Empty,
+                      Heart,Ice_Block,Heart,Empty,Empty,Empty,
+                      Empty,Empty,Empty,Empty,Empty,Empty,
+                      Tree,Empty,Empty,Tree,Empty,Empty],
+                     [Tree,Empty,Empty,Empty,Empty,Empty,
+                      Empty,Empty,Empty,Empty,Empty,Empty,
+                      Empty,Empty,Empty,Empty,Heart,Empty,
+                      Empty,Empty,Mountain,House,Empty,Empty],
+                     [Tree,Tree,Empty,Empty,Empty,Empty,
+                      Tree,Empty,Empty,Empty,Empty,Empty,
+                      Empty,Empty,Empty,Empty,Empty,Empty,
+                      Empty,Empty,Empty,Empty,Empty,Empty]]
 
+penguin_view :: Board -> Pos -> Dir -> [Tile]
+penguin_view board pos dir = drop 1 ( slice board pos dir )
+ 
+get_initial_world :: World
+get_initial_world = ( World get_initial_board ( Pos 0 0 ) East 3 )
+
+move :: World -> Dir -> World 
+move world move_dir =
+    if move_dir /= penguinDir world 
+    then ( World get_initial_board ( penguinPos world ) 
+           move_dir ( heartCount world ) )
+    else ( World get_initial_board ( penguinPos world )
+           ( penguinDir world ) ( heartCount world ) )
+ 
 main :: IO ()
 main = do
 --    if ( ( move True, (Pos 0 0) East West ) /= ( True, ( Pos 0 0 ), East, East ) )
