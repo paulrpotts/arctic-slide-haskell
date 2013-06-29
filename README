@@ -1,21 +1,19 @@
-About the Dylan Code
+About the Haskell Code
 
 This is an implementation, in Haskell, of the core game logic from the
 old Macintosh Polar game. See:
 
 http://praisecurseandrecurse.blogspot.com/2013/06/dispatch-for-polar-game-in-dylan.html
 
-I wrote it for learning and experimental purposes, to test the current
-OpenDylan compiler and runtime and to consider some design alternatives.
+I wrote it for learning and experimentation purposes. I'm only going to
+continue working on it as long as (1) I have free time, (2) I feel that
+I'm having fun and learning new things. It might get a GUI. It might not. 
 You are free to use it in any way that seems right to you, but please
 notice possible intellectual property issues described below.
 
-About the iOS Code
+About the Polar Game
 
-This is a reverse-engineered implementation of the old Macintosh Polar
-game, something I saved since my college days. Right now it is just the
-"back end" code for iOS, but has no GUI. I am working on a GUI as time
-allows. For details see my blog:
+For details see my blog:
 
 http://praisecurseandrecurse.blogspot.com/2013/06/objective-c-day-3.html
 
