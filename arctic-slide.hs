@@ -7,7 +7,7 @@ data Pos = Pos { posY :: Int, posX :: Int }
     deriving (Show, Eq)
 
 data Tile = Empty | Tree | Mountain | House | Ice_Block |
-    Bomb | Heart | Edge deriving (Show, Eq)
+    Bomb | Heart deriving (Show, Eq)
 
 -- All the tutorials say "don't use arrays, don't use arrays,
 -- don't use arrays," at least not until you've worked out what
@@ -38,20 +38,20 @@ movable t = ( t == Bomb ) || ( t == Heart ) || ( t == Ice_Block )
 -- A subset of tiles aren't movable; note that this set
 -- overlaps blocking and that Tree is both walkable and fixed
 fixed :: Tile -> Bool
-fixed t = ( t == House ) || ( t == Mountain ) || ( t == Edge )
+fixed t = ( t == House ) || ( t == Mountain )
 
 -- Interaction logic operates on a list of tiles extrated from
 -- the board, starting at a given pos and going in the given
 -- dir, until the edge of the board is reached.
 view :: Board -> Pos -> Dir -> [Tile]
 view board pos East = ( drop ( posX pos + 1 ) $
-    board !! ( posY pos ) ) ++ [Edge]
+    board !! ( posY pos ) )
 view board pos South = ( drop ( posY pos + 1 ) $
-    ( transpose board ) !! ( posX pos ) ) ++ [Edge]
+    ( transpose board ) !! ( posX pos ) )
 view board pos West = ( reverse $ take ( posX pos ) $
-    board !! ( posY pos ) ) ++ [Edge]
+    board !! ( posY pos ) )
 view board pos North = ( reverse $ take ( posY pos ) $
-    ( transpose board ) !! ( posX pos ) ) ++ [Edge]
+    ( transpose board ) !! ( posX pos ) )
  
 slide :: [Tile] -> [Tile]
 slide (Ice_Block:t:ts) | blocking t = (Ice_Block:t:ts)
@@ -62,15 +62,14 @@ collide (Bomb:Mountain:ts) = [Empty, Empty] ++ ts
 collide (Heart:House:ts) = [Empty, House] ++ ts
 collide (Ice_Block:t:ts) | blocking t = (Empty:t:ts) 
 collide (t:Empty:ts) | movable t = (Empty:(slide(t:ts)))
-collide (Edge:_) = [Edge] 
+collide (t:_) = [t] 
 
--- Step should never be given an empty list; the edge case is
--- [Edge]. Return true if the penguin can move onto the tile
+-- Return true if the penguin can move onto the tile
 -- at the head. If the head tile is not walkable, it may be
 -- pushable, so delegate to collide, which may return a new
 -- list. 
 step :: [Tile] -> ( Bool, [Tile] )
-step [] = error "step: empty list!"
+step [] = ( False, [] )
 step ts = if walkable (head ts) then ( True, ts )
                                 else ( False, collide ts ) 
 
@@ -101,8 +100,7 @@ nest xs = [xs]
 -- This is overly complicated -- basically, we build a new board
 -- out of portions of the starting board wrapped around a call
 -- to generate an updated view. It becomes particularly ugly
--- when we're undoing the appending of Edge using init, and
--- undoing the reversing that view has done when looking North
+-- when we're undoing the reversing that view has done when looking North
 -- and West, and working with the transposed board for North and
 -- South. 
 --
@@ -122,7 +120,7 @@ next_board board pos East =
         nest (
             ( take ( posX pos + 1 )
                 ( board !! ( posY pos ) ) ) ++ 
-            ( init updated_view ) ) ++
+            updated_view ) ++
         drop ( posY pos + 1 ) board )
 next_board board pos South =
     let ( penguin_could_move, updated_view ) = step $ view board pos South
@@ -133,7 +131,7 @@ next_board board pos South =
             nest (
                 ( take ( posY pos + 1 )
                     ( ( transpose board ) !! ( posX pos ) ) ) ++ 
-                ( init updated_view ) ) ++
+                updated_view ) ++
         drop ( posX pos + 1 ) ( transpose board ) ) )
 next_board board pos West =
     let ( penguin_could_move, updated_view ) = step $ view board pos West 
@@ -141,7 +139,7 @@ next_board board pos West =
         penguin_could_move,
         take ( posY pos ) board ++
         nest (
-            ( reverse ( init updated_view ) ) ++
+            ( reverse updated_view ) ++
             ( drop ( posX pos )
                 ( board !! ( posY pos ) ) ) ) ++
         drop ( posY pos + 1 ) board )
@@ -152,18 +150,20 @@ next_board board pos North =
             transpose (
             take ( posX pos ) ( transpose board ) ++
             nest (
-                ( reverse ( init updated_view ) ) ++
+                ( reverse updated_view ) ++
                 ( drop ( posY pos )
                     ( ( transpose board ) !! ( posX pos ) ) ) ) ++
             drop ( posX pos + 1 ) ( transpose board ) ) )
 
 next_ppos :: Pos -> Dir -> Pos
-next_ppos pos East = ( Pos ( posY pos ) ( posX pos + 1 ) )
-next_ppos pos South = ( Pos ( posY pos + 1 ) ( posX pos ) )
-next_ppos pos West = ( Pos ( posY pos ) ( posX pos - 1 ) )
-next_ppos pos North = ( Pos ( posY pos - 1 ) ( posX pos ) )
+next_ppos pos dir = Pos ( posY pos + fst step ) ( posX pos + snd step )
+    where step = delta dir
+          delta East = ( 0, 1 )
+          delta South = ( 1, 0 )
+          delta West = ( 0, -1 )
+          delta North = ( -1, 0 )
  
-next_world :: World -> Dir-> World 
+next_world :: World -> Dir -> World 
 next_world old_world move_dir =
     let ( can_move, board ) = next_board ( wBoard old_world ) ( wPenguinPos old_world ) ( wPenguinDir old_world )
     in
@@ -186,7 +186,6 @@ pretty_tiles (t:ts) = case t of
                  Heart     -> "he "
                  Bomb      -> "bo "
                  Tree      -> "tr "
-                 Edge      -> "###"
              ++ pretty_tiles ts
 
 pretty_board :: Board -> String
@@ -200,28 +199,25 @@ pretty_world world =
     ", hearts: "  ++ show ( wHeartCount world ) ++ 
     "\n" ++ pretty_board ( wBoard world )
 
+moves_to_dirs :: [(Dir, Int)] -> [Dir]
+moves_to_dirs [] = []
+moves_to_dirs (m:ms) = replicate ( snd m ) ( fst m ) ++ moves_to_dirs ms 
+
+moves_board_1 = [(East,21),(South,2), (East,3),(North,2),(West,2)]
+
+move_sequence :: [(Dir,Int)] -> [World]
+move_sequence repeats = scanl next_world init_world steps
+    where steps = moves_to_dirs repeats 
+
+move_sequence' :: [(Dir,Int)] -> World
+move_sequence' repeats = foldl next_world init_world steps
+    where steps = moves_to_dirs repeats
+
 main :: IO ()
 main = do
-    putStrLn "ArcticSlide start"
-    let world0 = init_world
-    putStrLn $ pretty_world world0
-
-    -- 21 East
-    let world5  = next_world ( next_world ( next_world ( next_world ( next_world world0  East ) East ) East ) East ) East
-    let world10 = next_world ( next_world ( next_world ( next_world ( next_world world5  East ) East ) East ) East ) East
-    let world15 = next_world ( next_world ( next_world ( next_world ( next_world world10 East ) East ) East ) East ) East
-    let world20 = next_world ( next_world ( next_world ( next_world ( next_world world15 East ) East ) East ) East ) East
-    let world21 = next_world world20 East 
-    putStrLn $ pretty_world world21
-    -- 2 South
-    let world23 = next_world ( next_world world21 South ) South
-    putStrLn $ pretty_world world23
-    -- 3 East
-    let world26 = next_world ( next_world ( next_world world23 East ) East ) East
-    putStrLn $ pretty_world world26
-    -- 2 North
-    let world28 = next_world ( next_world world26 North ) North
-    putStrLn $ pretty_world world28
-    -- 2 West
-    let world30 = next_world ( next_world world28 West ) West
-    putStrLn $ pretty_world world30
+    mapM_ putStrLn pretty_worlds
+    putStrLn pretty_final_world 
+    where worlds = move_sequence moves_board_1
+          final_world = move_sequence' moves_board_1
+          pretty_worlds = map pretty_world worlds
+          pretty_final_world = pretty_world final_world
