@@ -31,23 +31,18 @@ fixed t = ( t == House ) || ( t == Mountain )
 -- Tile interactions: create a new list from the old list
 -- representing the pushed object and tiles ahead of it
 slide :: [ Tile ] -> [ Tile ]
-slide ( Ice_Block : [] ) = ( Ice_Block : [] )
-slide ( Ice_Block : t : ts ) | blocking t = ( Ice_Block : t : ts )
-slide ( Ice_Block : Empty : ts ) = ( Empty : ( slide ( Ice_Block : ts ) ) )
-slide ( t : Empty : ts ) | movable t = ( Empty : ( slide ( t : ts ) ) )
-slide ( t0 : t1 : ts ) | blocking t1 = collide ( t0 : t1 : ts )
-slide ( t : [] ) | movable t = ( t : [] ) 
+slide ( Ice_Block : ts ) | ( null ts ) || ( blocking $ head ts ) = ( Ice_Block : ts )
+slide ( t : Empty : ts ) = ( Empty : ( slide ( t : ts ) ) )
+slide ( t : ts ) | ( null ts ) || ( blocking $ head ts ) = collide ( t : ts )
 
 collide :: [ Tile ] -> [ Tile ]
+collide [] = []
+collide ( t : ts ) | fixed t = ( t : ts )
 collide ( Bomb : Mountain : ts) = [ Empty, Empty ] ++ ts
 collide ( Heart : House : ts ) = [ Empty, House ] ++ ts 
-collide ( Ice_Block : t : ts ) | blocking t = ( Empty : t : ts )
-collide [] = []
-collide ( Ice_Block : [] ) = [ Empty ]
-collide ( t : [] ) | movable t = ( t : [] )
-collide ( t : ts ) | fixed t = ( t : ts )
+collide ( Ice_Block : ts ) | ( null ts ) || ( blocking $ head ts ) = ( Empty : ts )
+collide ( t : ts ) | ( movable t ) && ( ( null ts ) || ( blocking $ head ts ) ) = ( t : ts )
 collide ( t : Empty : ts ) | movable t = ( Empty : ( slide( t : ts ) ) )
-collide ( t0 : t1 : ts ) | ( movable t0 ) && ( blocking t1 ) = ( t0 : t1 : ts )
 
 -- Dir represents the orientation of the penguin
 data Dir = North | East | South | West
