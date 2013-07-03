@@ -31,18 +31,23 @@ fixed t = ( t == House ) || ( t == Mountain )
 -- Tile interactions: create a new list from the old list
 -- representing the pushed object and tiles ahead of it
 slide :: [ Tile ] -> [ Tile ]
+slide ( Ice_Block : [] ) = ( Ice_Block : [] )
 slide ( Ice_Block : t : ts ) | blocking t = ( Ice_Block : t : ts )
-slide ( t0 : t1 : ts ) | blocking t1 = ( t0 : t1 : ts )
-slide ( t : Empty : ts ) | movable t = ( Empty : ( collide ( t : ts ) ) )
+slide ( Ice_Block : Empty : ts ) = ( Empty : ( slide ( Ice_Block : ts ) ) )
+slide ( t : Empty : ts ) | movable t = ( Empty : ( slide ( t : ts ) ) )
+slide ( t0 : t1 : ts ) | blocking t1 = collide ( t0 : t1 : ts )
+slide ( t : [] ) | movable t = ( t : [] ) 
 
 collide :: [ Tile ] -> [ Tile ]
-collide ( t : Empty :ts ) | movable t = ( Empty : ( slide( t : ts ) ) )
-collide ( Bomb : Mountain : ts) = [ Empty, Empty ] ++ ts 
-collide ( Heart : House : ts ) = [ Empty, House ] ++ ts
-collide ( Ice_Block : t : ts) | blocking t = ( Empty : t : ts )
-collide ( Ice_Block : [] ) = [ Empty ]
-collide ( t : _ ) = [ t ]
+collide ( Bomb : Mountain : ts) = [ Empty, Empty ] ++ ts
+collide ( Heart : House : ts ) = [ Empty, House ] ++ ts 
+collide ( Ice_Block : t : ts ) | blocking t = ( Empty : t : ts )
 collide [] = []
+collide ( Ice_Block : [] ) = [ Empty ]
+collide ( t : [] ) | movable t = ( t : [] )
+collide ( t : ts ) | fixed t = ( t : ts )
+collide ( t : Empty : ts ) | movable t = ( Empty : ( slide( t : ts ) ) )
+collide ( t0 : t1 : ts ) | ( movable t0 ) && ( blocking t1 ) = ( t0 : t1 : ts )
 
 -- Dir represents the orientation of the penguin
 data Dir = North | East | South | West
@@ -277,7 +282,7 @@ pretty_world world =
     ", facing: "  ++ show ( wPenguinDir world ) ++
     ", hearts: "  ++ show ( wHeartCount world ) ++
     -- list implementation is currently broken
-    -- "\n" ++ pretty_board_list ( wBoardList world ) ++ 
+    --"\n" ++ pretty_board_list ( wBoardList world ) ++ 
     "\n" ++ pretty_board_array ( wBoardArray world )
 
 moves_to_dirs :: [(Dir, Int)] -> [Dir]
