@@ -32,14 +32,17 @@ fixed t = ( t == House ) || ( t == Mountain )
 -- representing the pushed object and tiles ahead of it
 slide :: [ Tile ] -> [ Tile ]
 slide ( Ice_Block : t : ts ) | blocking t = ( Ice_Block : t : ts )
+slide ( t0 : t1 : ts ) | blocking t1 = ( t0 : t1 : ts )
 slide ( t : Empty : ts ) | movable t = ( Empty : ( collide ( t : ts ) ) )
 
 collide :: [ Tile ] -> [ Tile ]
+collide ( t : Empty :ts ) | movable t = ( Empty : ( slide( t : ts ) ) )
 collide ( Bomb : Mountain : ts) = [ Empty, Empty ] ++ ts 
 collide ( Heart : House : ts ) = [ Empty, House ] ++ ts
-collide ( Ice_Block : t : ts) | blocking t = ( Empty : t : ts ) 
-collide ( t : Empty :ts ) | movable t = ( Empty : ( slide( t : ts ) ) )
-collide ( t:_) = [t] 
+collide ( Ice_Block : t : ts) | blocking t = ( Empty : t : ts )
+collide ( Ice_Block : [] ) = [ Empty ]
+collide ( t : _ ) = [ t ]
+collide [] = []
 
 -- Dir represents the orientation of the penguin
 data Dir = North | East | South | West
