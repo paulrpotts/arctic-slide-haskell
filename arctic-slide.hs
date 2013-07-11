@@ -130,9 +130,6 @@ step_array tile_assoc = if ( walkable $ head tile_list )
     where ( coord_list, tile_list ) = unzip tile_assoc
 
 -- Here is a version for the list implementation
-nest :: [a] -> [[a]]
-nest xs = [xs]
-
 view_list :: BoardList -> Pos -> Dir -> [Tile]
 view_list board pos dir =
     let row = ( posY pos )
@@ -164,15 +161,16 @@ next_board_list board pos dir =
 
 apply_view_list_to_row :: [ Tile ] -> Int -> Bool -> [ Tile ] -> [Tile]
 apply_view_list_to_row orig pos True update = 
-    take ( pos + 1 ) orig ++ ( init update )
-apply_view_to_row orig pos False update = 
-    ( reverse ( init update ) ) ++ ( drop pos orig )
+    take ( pos + 1 ) orig ++ update
+apply_view_list_to_row orig pos False update = 
+    ( reverse update ) ++ ( drop pos orig )
 
 apply_view_list_to_rows :: BoardList -> Int -> Int -> Bool -> [ Tile ] -> BoardList
 apply_view_list_to_rows orig row pos is_forward update =
     take row orig ++
-    nest ( apply_view_to_row ( orig !! row ) pos is_forward update ) ++
+    nest ( apply_view_list_to_row ( orig !! row ) pos is_forward update ) ++
     drop ( row + 1 ) orig
+    where nest xs = [xs]
 
 update_board_from_view_list :: BoardList -> Pos -> Dir -> [ Tile ] -> BoardList
 update_board_from_view_list board pos dir updated_view_list 
@@ -234,14 +232,21 @@ next_world :: World -> Dir -> World
 next_world old_world move_dir =
     if ( move_dir /= wPenguinDir old_world )
     then ( World ( wBoardList old_world ) ( wBoardArray old_world ) 
-                 ( wPenguinPos old_world ) move_dir ( wHeartCount old_world ) )
+           ( wPenguinPos old_world ) move_dir ( wHeartCount old_world ) )
     else ( World board_list board_array  
-                 ( if penguin_moved_array then next_penguin_pos ( wPenguinPos old_world ) ( wPenguinDir old_world )
-                                          else ( wPenguinPos old_world ) )
-                 ( wPenguinDir old_world )
-                 ( wHeartCount old_world ) )
-    where ( penguin_moved_array, board_array ) = next_board_array ( wBoardArray old_world ) ( wPenguinPos old_world ) ( wPenguinDir old_world )
-          ( unused_penguin_moved_list, board_list ) = next_board_list ( wBoardList old_world ) ( wPenguinPos old_world ) ( wPenguinDir old_world )
+           ( if penguin_moved_array then next_penguin_pos ( wPenguinPos old_world )
+                                                          ( wPenguinDir old_world )
+                                    else ( wPenguinPos old_world ) )
+           ( wPenguinDir old_world )
+           ( wHeartCount old_world ) )
+    where {
+        ( penguin_moved_array, board_array ) = next_board_array ( wBoardArray old_world ) 
+                                                                ( wPenguinPos old_world )
+                                                                ( wPenguinDir old_world );
+        ( unused_penguin_moved_list, board_list ) = next_board_list ( wBoardList old_world )
+                                                                    ( wPenguinPos old_world )
+                                                                    ( wPenguinDir old_world )
+    }
 
 pretty_tiles :: [Tile] -> String
 pretty_tiles [] = "\n"
@@ -276,8 +281,7 @@ pretty_world world =
     "penguin @: " ++ show ( wPenguinPos world ) ++
     ", facing: "  ++ show ( wPenguinDir world ) ++
     ", hearts: "  ++ show ( wHeartCount world ) ++
-    -- list implementation is currently broken
-    --"\n" ++ pretty_board_list ( wBoardList world ) ++ 
+    "\n" ++ pretty_board_list ( wBoardList world ) ++ 
     "\n" ++ pretty_board_array ( wBoardArray world )
 
 moves_to_dirs :: [(Dir, Int)] -> [Dir]
